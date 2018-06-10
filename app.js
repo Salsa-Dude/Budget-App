@@ -60,6 +60,20 @@ var budgetController = (function() {
 
       return newItem;
     },
+    deleteItem: function(type, id) {
+      
+      let ids = data.allItems[type].map(function(obj) {
+        return obj.id;
+      });
+
+      console.log(id);
+
+      const index = ids.indexOf(id);
+
+      if(index !== -1) {
+        data.allItems[type].splice(index, 1);
+      }
+    },
     calculateBudget: function() {
       
       // Calculate total income and expenses
@@ -121,7 +135,7 @@ var UIController = (function() {
       if(type === 'income') {
         element = Domstrings.incomeContainer;
         html = `
-          <div class="item clearfix" id="${type}-0">
+          <div class="item clearfix" id="${type}-${obj.id}">
             <div class="item__description">${obj.desc}</div>
             <div class="right clearfix">
               <div class="item__value">${obj.value}</div>
@@ -134,7 +148,7 @@ var UIController = (function() {
       } else if(type === 'expense') {
         element = Domstrings.expenseContainer;
         html = `
-          <div class="item clearfix" id="${type}-0">
+          <div class="item clearfix" id="${type}-${obj.id}">
             <div class="item__description">${obj.desc}</div>
             <div class="right clearfix">
               <div class="item__value">${obj.value}</div>
@@ -146,10 +160,13 @@ var UIController = (function() {
           </div>
         `;
       }
-
       // Insert HTML into the DOM
       document.querySelector(element).insertAdjacentHTML('beforeend', html);
 
+    },
+    deleteListItem: function(selectorID) {
+      const element = document.getElementById(selectorID);
+      element.parentElement.removeChild(element);
     },
     clearFields: function() {
       document.querySelector(Domstrings.inputDescription).value = '';
@@ -178,11 +195,14 @@ var controller = (function(budgetCtrl,UICtrl) {
   const LoadEventListeners = function() {
     
     document.querySelector('.add__btn').addEventListener('click', ctrlAddItem);
-    document.addEventListener('keypress', function(e) {
-      if(e.keyCode === 13) {
-        ctrlAddItem();
-      }
-    });
+      document.addEventListener('keypress', function(e) {
+        if(e.keyCode === 13) {
+          ctrlAddItem();
+        }
+      });
+    
+    document.querySelector('.container').addEventListener('click', ctrlDeleteItem);
+
   }
 
   const ctrlAddItem = function() {
@@ -203,6 +223,31 @@ var controller = (function(budgetCtrl,UICtrl) {
       // Calculate and update budget
       updateBudget();
     }
+  }
+
+  const ctrlDeleteItem = function(e) {
+    let itemID, splitID,type,ID;
+    
+    itemID = e.target.parentNode.parentNode.parentNode.parentNode.id;
+
+    console.log(itemID);
+
+    if(itemID) {
+      splitID = itemID.split('-');
+      type = splitID[0];
+      ID = parseInt(splitID[1]);
+
+      // Delete item from data structure
+      budgetController.deleteItem(type,ID);
+
+      // Delete item from UI
+      UIController.deleteListItem(itemID);
+
+      // Update and show the new budget
+      updateBudget();
+    }
+
+    
   }
 
   const updateBudget = function() {
